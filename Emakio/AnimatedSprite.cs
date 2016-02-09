@@ -16,6 +16,101 @@ namespace Emakio
     /// </summary>
     public class AnimatedSprite : IDrawable, ITickable
     {
+        /// <summary>
+        /// The AnimationState class contains animation state information for a particular state that
+        /// our sprite may be in.
+        /// </summary>
+        public class Animation
+        {
+            /// <summary>
+            /// A delegate declaring a listener for the animation state starts and ends.
+            /// </summary>
+            public delegate void AnimationStartEndListener();
+
+            /// <summary>
+            /// What frame in the sprite sheet do we start at?
+            /// </summary>
+            public Point StartFrame;
+
+            /// <summary>
+            /// By what vector are we supposed to translate by when changing sprites?
+            /// </summary>
+            public Point Modifier;
+
+            /// <summary>
+            /// What is the size in pixels of each animation frame?
+            /// </summary>
+            public Point FrameSize;
+
+            /// <summary>
+            /// How many frames are there total?
+            /// </summary>
+            public int FrameCount;
+
+            /// <summary>
+            /// The sprite sheet to use.
+            /// </summary>
+            public Texture2D Sheet;
+
+            /// <summary>
+            /// Should we loop? If this is true, the state start and state end listeners are
+            /// called in a looping fashion as well.
+            /// </summary>
+            public bool Looping;
+
+            /// <summary>
+            /// How many milliseconds to wait for each frame?
+            /// </summary>
+            public int MillisecondsPerFrame;
+
+            /// <summary>
+            /// A delegate function that is called when the animation state starts.
+            /// </summary>
+            public AnimationStartEndListener AnimationStartListener;
+
+            /// <summary>
+            /// A delegate function that is called when the animation state ends.
+            /// </summary>
+            public AnimationStartEndListener AnimationEndListener;
+
+            public SpriteEffects Effects;
+
+            /// <summary>
+            /// A constructor accepting a sprite sheet, the start frame, the frame modifier, the frame size
+            /// and the frame count.
+            /// </summary>
+            /// <param name="name">
+            /// The name of the new animation state.
+            /// </param>
+            /// <param name="sheet">
+            /// The sprite sheet associated with this animation state.
+            /// </param>
+            /// <param name="startFrame">
+            /// The starting X,Y position animation frame in sprite frames.
+            /// </param>
+            /// <param name="modifier">
+            /// The frame advance modifier in sprite frames.
+            /// </param>
+            /// <param name="frameSize">
+            /// The size of a single frame in the animation.
+            /// </param>
+            /// <param name="frameCount">
+            /// The number of frames in the animation.
+            /// </param>
+            public Animation(Texture2D sheet, Point startFrame, Point modifier, Point frameSize, int frameCount)
+            {
+                this.FrameCount = frameCount;
+                this.Modifier = modifier;
+                this.StartFrame = startFrame;
+                this.FrameSize = frameSize;
+                this.Sheet = sheet;
+                this.Effects = SpriteEffects.None;
+                this.MillisecondsPerFrame = 80;
+
+                this.Looping = true;
+            }
+        };
+
         public SpriteEffects Effects { get; set; }
 
         /// <summary>

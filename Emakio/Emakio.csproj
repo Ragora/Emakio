@@ -59,7 +59,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AnimatedSprite.cs" />
-    <Compile Include="StateSelector.cs" />
     <Compile Include="Engine.cs" />
     <Compile Include="GUI\Elements\Button.cs" />
     <Compile Include="GUI\Elements\DigitalGage.cs" />
