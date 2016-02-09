@@ -21,19 +21,30 @@ namespace Emakio
 
         public RenderTarget2D RenderTarget;
 
-        public Engine(GraphicsDevice device)
+        public Color ClearColor;
+
+        public Engine(Microsoft.Xna.Framework.Game game)
         {
-            this.GraphicsDevice = device;
+            this.GraphicsDevice = game.GraphicsDevice;
 
             this.Updated = new List<ITickable>();
             this.Drawn = new List<IDrawable>();
 
             this.SpriteBatch = new SpriteBatch(this.GraphicsDevice);
+
+            this.ClearColor = Color.CornflowerBlue;
+
+            // Ensure that all the singleton systems are initialized
+            SoundManager.Create(game);
+            InputManager.Create();
+            TimerManager.Create();
         }
 
         public void Draw()
         {
             this.GraphicsDevice.SetRenderTarget(this.RenderTarget);
+            this.GraphicsDevice.Clear(this.ClearColor);
+
             SoundManager.Draw(this.SpriteBatch);
 
             foreach (IDrawable drawn in this.Drawn)

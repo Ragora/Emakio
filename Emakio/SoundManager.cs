@@ -24,7 +24,7 @@ namespace Emakio
         /// <summary>
         /// The internally tracked game instance.
         /// </summary>
-        private static Game InternalGame;
+        private static Microsoft.Xna.Framework.Game InternalGame;
 
         /// <summary>
         /// A dictionary mapping short names to SoundEffects.

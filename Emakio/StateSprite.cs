@@ -13,11 +13,14 @@ namespace Emakio
 {
     /// <summary>
     /// The StateSprite class is an animated sprite whose actual animation
-    /// contents are controlled via named states.Each state can contain
-    /// its own sprite sheet, frame size, frame count, etc.Each state may
-    /// also have listeners attached to its start and end points.
+    /// contents are controlled via named states. Each state can contain
+    /// its own sprite sheet, frame size, frame count, etc. Each state may
+    /// also have listeners attached to its start and end points. State selection
+    /// logic is implementing using a recursive branch, leaf system where the
+    /// branches and leafs contain an expression to be evaluated which influences
+    /// the decisions made by the animation picker.
     /// </summary>
-    public class StateSprite : AnimatedSprite
+    public class StateSprite<T> : AnimatedSprite
     {
         /// <summary>
         /// The current frame in our current animation state to use.
@@ -28,11 +31,13 @@ namespace Emakio
         /// The currently state animation state.
         /// </summary>
         protected AnimationState CurrentAnimationState;
-
+        
         /// <summary>
         /// A dictionary mapping the shorthand state names to their respective animation state information.
         /// </summary>
         private SortedDictionary<String, AnimationState> AnimationStates;
+
+        public StateSelector AnimationSelector;
 
         /// <summary>
         /// The AnimationState class contains animation state information for a particular state that
@@ -294,7 +299,15 @@ namespace Emakio
         /// </param>
         public override void Update(GameTime time)
         {
-            if (!Updated || CurrentAnimationState == null)
+            if (!this.Updated || this.AnimationSelector == null)
+                return;
+
+            // Perform Selection Logic
+            if (this.CurrentAnimationState != null && !this.CurrentAnimationState.StateLock)
+               this.SetAnimationState(this.AnimationSelector.SelectAnimation(this));
+
+            // Don't do anything if we don't have an animation state set.
+            if (this.CurrentAnimationState == null)
                 return;
 
             TimeSinceLastFrame += time.ElapsedGameTime.Milliseconds;
@@ -332,6 +345,110 @@ namespace Emakio
                 CurrentFrameRectangle.Y = CurrentFrame.Y * CurrentAnimationState.FrameSize.Y;
                 CurrentFrameRectangle.Width = CurrentAnimationState.FrameSize.X;
                 CurrentFrameRectangle.Height = CurrentAnimationState.FrameSize.Y;
+            }
+        }
+
+        /// <summary>
+        /// For use with the StateSprite. The StateSelector is a class with which you can
+        /// represent arbitrary state machines with a hierarchy of lambda expressions and/or delegate
+        /// methods that either return a result or branch the animation state system.
+        /// 
+        /// A textual representation of a basic utilization might look like:
+        /// TopLevel
+        ///     IsFalling
+        ///         FacingDirection == Left: "FallLeft"
+        ///         FacingDirection == Right: "FallRight"
+        ///     IsWalking
+        ///         FacingDirection == Left: "WalkLeft"
+        ///         FacingDirection == Right: "WalkRight"
+        ///     IsCrouching
+        ///         FacingDirection == Left: "CrouchLeft"
+        ///         FacingDirection == Right: "CrouchRight"
+        /// </summary>
+        public class StateSelector
+        {
+            public abstract class ANode
+            {
+                public delegate bool EvaluatorMethod(T obj);
+
+                protected EvaluatorMethod Evaluator;
+
+                public ANode(EvaluatorMethod eval)
+                {
+                    Evaluator = eval;
+                }
+            }
+
+            public class Branch : ANode
+            {
+                public List<ANode> Nodes;
+
+                public Branch(EvaluatorMethod eval) : base(eval)
+                {
+                    this.Nodes = new List<ANode>();
+                }
+
+                public Leaf Evaluate(object obj)
+                {
+                    T target = (T)obj;
+
+                    if (!this.Evaluator(target))
+                        return null;
+
+                    foreach (ANode node in this.Nodes)
+                    {
+                        if (node is Branch)
+                        {
+                            Branch branch = (Branch)node;
+                            Leaf result = branch.Evaluate(obj);
+
+                            if (result != null)
+                                return result;
+                        }
+                        else
+                        {
+                            Leaf leaf = (Leaf)node;
+
+                            if (leaf.Evaluate(obj))
+                                return leaf;
+                        }
+                    }
+
+                    return null;
+                }
+            }
+
+            public class Leaf : ANode
+            {
+                public string Animation;
+
+                public Leaf(EvaluatorMethod eval, string animation) : base(eval)
+                {
+                    this.Animation = animation;
+                }
+
+                public bool Evaluate(object obj)
+                {
+                    T result = (T)obj;
+                    return this.Evaluator(result);
+                }
+            }
+
+            public Branch Top;
+
+            public StateSelector()
+            {
+                this.Top = new Branch((sprite) => true);
+            }
+
+            public string SelectAnimation(object obj)
+            {
+                Leaf result = Top.Evaluate(obj);
+
+                if (result != null)
+                    return result.Animation;
+
+                return null;
             }
         }
     }
